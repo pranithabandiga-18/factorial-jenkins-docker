@@ -53,7 +53,7 @@ If this folder is already a Git repository, skip `git init -b main`; add the rem
 
 ## Configure the Jenkins job
 
-1. Ensure the Jenkins controller/agent that will run this pipeline has Git, Python 3, and Docker installed. The Jenkins agent must be allowed to run Docker commands (typically through a Docker socket or an appropriately configured agent). The Jenkinsfile uses the Unix `sh` step, so run it on a Linux agent.
+1. Ensure the Jenkins controller/agent that will run this pipeline has Git, Python 3, and Docker installed. The Jenkins agent must be allowed to run Docker commands (typically through a Docker socket or an appropriately configured agent). The Jenkinsfile detects the agent OS: it uses `sh` and `python3` on Linux, and `bat` and `py -3` on Windows.
 2. In Jenkins, select **New Item**, enter a job name such as `factorial-pipeline`, choose **Pipeline**, then select **OK**.
 3. Under **Pipeline**, choose **Pipeline script from SCM**. Set **SCM** to **Git**, enter the GitHub repository URL, and configure credentials if it is private. Set the branch to `*/main` and **Script Path** to `Jenkinsfile`.
 4. Save and select **Build Now**. The stages check out the repository, run `python3 factorial.py 5`, build a build-number-tagged image and a `latest` tag, then run the image with input `6`.
@@ -73,3 +73,4 @@ For a non-negative integer `n`, the factorial is the product of all positive int
 - `Dockerfile` — reproducible container image definition
 - `Jenkinsfile` — checkout, execution, image build, and container run stages
 - `.dockerignore` — excludes Git metadata and Python cache files from image build context
+
