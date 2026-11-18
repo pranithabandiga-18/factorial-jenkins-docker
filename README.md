@@ -1,76 +1,71 @@
-# Factorial Program with Jenkins and Docker
+# Factorial CI project
 
-A command-line Python program that calculates the factorial of a non-negative integer. The Jenkins pipeline runs the program, builds a Docker image, and runs a container from that image.
-
-## Requirements
-
-- Python 3.8 or newer for running locally
-- Git to publish the source
-- Docker Engine (and a Jenkins agent with Docker access) for image building
-- Jenkins with Pipeline support and a Git installation
-
-## Run locally
-
-```bash
-python factorial.py 5
-```
-
-Expected output:
-
-```text
-5! = 120
-```
-
-The input must be a non-negative whole number. `0!` is `1`. For example, `python factorial.py -1` reports an input error.
-
-## Build and run the Docker image
-
-From this directory:
-
-```bash
-docker build -t factorial-app:latest .
-docker run --rm factorial-app:latest 6
-```
-
-The image uses `python:3.12-slim`, copies in the one-file application, and sets the program as its entry point. The default input is `5`, so `docker run --rm factorial-app:latest` prints `5! = 120`; a number passed after the image name replaces that default.
-
-## Publish to GitHub with Git
-
-1. On GitHub, create a new empty repository named `factorial-jenkins-docker`. Do not initialize it with a README, license, or `.gitignore` because this folder already contains them.
-2. Open a terminal in this project directory and run:
-
-   ```bash
-   git init -b main
-   git add .
-   git commit -m "Add factorial app with Jenkins and Docker"
-   git remote add origin https://github.com/YOUR_GITHUB_USERNAME/factorial-jenkins-docker.git
-   git push -u origin main
-   ```
-
-Replace `YOUR_GITHUB_USERNAME` with your GitHub username. GitHub may prompt you to authenticate; use a configured credential manager or a personal access token when Git asks for credentials. Do not put a token in the remote URL or commit it to this project.
-
-If this folder is already a Git repository, skip `git init -b main`; add the remote only if one is not already configured (`git remote -v`).
-
-## Configure the Jenkins job
-
-1. Ensure the Jenkins controller/agent that will run this pipeline has Git, Python 3, and Docker installed. The Jenkins agent must be allowed to run Docker commands (typically through a Docker socket or an appropriately configured agent). The Jenkinsfile detects the agent OS: it uses `sh` and `python3` on Linux, and `bat` and `py -3` on Windows.
-2. In Jenkins, select **New Item**, enter a job name such as `factorial-pipeline`, choose **Pipeline**, then select **OK**.
-3. Under **Pipeline**, choose **Pipeline script from SCM**. Set **SCM** to **Git**, enter the GitHub repository URL, and configure credentials if it is private. Set the branch to `*/main` and **Script Path** to `Jenkinsfile`.
-4. Save and select **Build Now**. The stages check out the repository, run `python3 factorial.py 5`, build a build-number-tagged image and a `latest` tag, then run the image with input `6`.
-5. Open the build's **Console Output** to see each command and its result. The image is created on the Jenkins Docker host; it is not automatically uploaded to Docker Hub.
-
-### Optional: publish the image to Docker Hub
-
-The provided pipeline builds and runs the image locally. To publish it, first create a Docker Hub repository and add a Jenkins credential of type **Username with password** (use a Docker Hub access token as the password). Then adapt the image name to `YOUR_DOCKERHUB_USERNAME/factorial-app` and add a credentials-bound login, `docker push` stage, and logout. Keep the credential ID in Jenkins and never hard-code the token in the Jenkinsfile. Publishing is omitted by default so the pipeline works without registry credentials.
-
-## How the factorial works
-
-For a non-negative integer `n`, the factorial is the product of all positive integers up to `n`: `n! = n × (n−1) × ... × 1`. The special case `0! = 1` is part of the mathematical definition. Python's `math.factorial` performs the calculation using arbitrary-precision integers. The command-line parser converts the argument to an integer and rejects text or decimal input; the application also rejects negative integers.
+This project calculates the factorial of a non-negative integer. The same command-line program can run with Python or inside Docker. A Jenkins pipeline checks out the repository, runs the program, builds an image, and runs a container.
 
 ## Project files
 
-- `factorial.py` — command-line program and input validation
-- `Dockerfile` — reproducible container image definition
-- `Jenkinsfile` — checkout, execution, image build, and container run stages
-- `.dockerignore` — excludes Git metadata and Python cache files from image build context
+- factorial.py contains the factorial function and command-line interface.
+- Dockerfile packages the program in a small Python image and runs it as a non-root user.
+- Jenkinsfile defines the checkout, Python run, image build, and container run stages.
+- .dockerignore keeps Git and local Python files out of the Docker build context.
+- .gitignore excludes local Python cache and environment files from Git.
+- PROJECT_REPORT.md explains the design and records how to complete the Jenkins run evidence.
 
+## Run with Python
+
+From this directory:
+
+~~~powershell
+py -3 factorial.py 5
+~~~
+
+Expected output:
+
+~~~text
+5! = 120
+~~~
+
+The calculation starts at 1 and multiplies by every integer from 2 to the requested number. This also gives the defined results 0! = 1 and 1! = 1. Negative input is rejected.
+
+## Build and run with Docker
+
+~~~powershell
+docker build -t factorial-pranitha:latest .
+docker run --rm factorial-pranitha:latest 6
+~~~
+
+Expected output from the container:
+
+~~~text
+6! = 720
+~~~
+
+Omit the final number to use the image's default input of 5.
+
+## Jenkins pipeline
+
+The Jenkinsfile supports Windows and Unix agents. The agent needs Git, Python, Docker CLI, and access to a running Docker Engine. For a Windows Jenkins service, make sure the service account can run py -3 and reach Docker Desktop's engine.
+
+Create a Pipeline job with these settings:
+
+1. Select New Item, enter factorial-pipeline, choose Pipeline, then select OK.
+2. Under Pipeline, choose Pipeline script from SCM and set SCM to Git.
+3. Repository URL: https://github.com/pranithabandiga-18/factorial-jenkins-docker.git
+4. Branch specifier: */main
+5. Script path: Jenkinsfile
+
+Save the job, then select Build Now. Open Console Output to view the checkout, program output, Docker build, and container output. The image is created on the Jenkins agent and is not published to Docker Hub by this pipeline.
+
+## Push later changes to GitHub
+
+Run these commands in the project folder after editing files:
+
+~~~powershell
+git add factorial.py Dockerfile .dockerignore .gitignore Jenkinsfile README.md PROJECT_REPORT.md
+git commit -m "Update factorial CI project"
+git push origin main
+~~~
+
+## Report and evidence
+
+PROJECT_REPORT.md is written for this project. Add your own screenshot of the successful Jenkins Console Output after the service is installed and a build completes. Do not report a successful Jenkins build until that output is available.

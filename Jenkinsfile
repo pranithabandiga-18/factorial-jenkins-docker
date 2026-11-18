@@ -1,18 +1,24 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+        disableConcurrentBuilds()
+    }
+
     environment {
-        IMAGE_NAME = 'factorial-app'
+        IMAGE_NAME = 'factorial-pranitha'
         IMAGE_TAG = "build-${BUILD_NUMBER}"
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout source') {
             steps {
                 checkout scm
             }
         }
-        stage('Run program') {
+
+        stage('Run factorial with Python') {
             steps {
                 script {
                     if (isUnix()) {
@@ -23,6 +29,7 @@ pipeline {
                 }
             }
         }
+
         stage('Build Docker image') {
             steps {
                 script {
@@ -36,6 +43,7 @@ pipeline {
                 }
             }
         }
+
         stage('Run container') {
             steps {
                 script {
@@ -48,8 +56,13 @@ pipeline {
             }
         }
     }
+
     post {
-        success { echo 'Factorial program ran and the Docker image was built successfully.' }
-        failure { echo 'Pipeline failed. Review the stage output above.' }
+        success {
+            echo 'Factorial ran successfully and the Docker image was built and run.'
+        }
+        failure {
+            echo 'The pipeline failed. Review the console output for the failing stage.'
+        }
     }
 }
